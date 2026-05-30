@@ -45,7 +45,15 @@ jobs:
         run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Build (production)
-        run: vercel build --prod --token="$VERCEL_TOKEN"
+        run: |
+          # NEXT_PUBLIC_* are inlined at BUILD time. `vercel pull` can return
+          # them empty (sensitive/masked), which silently drops the frontend to
+          # mock data. NEXT_PUBLIC_API_URL is a public URL, so set it explicitly
+          # for the build. (Runtime-only secrets are injected by Vercel at run.)
+          touch .vercel/.env.production.local
+          sed -i '/^NEXT_PUBLIC_API_URL=/d' .vercel/.env.production.local
+          echo 'NEXT_PUBLIC_API_URL=https://api.codingovercoffee.com' >> .vercel/.env.production.local
+          vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy prebuilt to production
         run: |
