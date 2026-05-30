@@ -1,65 +1,141 @@
-import Image from "next/image";
+import Link from "next/link";
+import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { formatCompact } from "@/lib/format";
+import { FeedArticleCard } from "@/components/feed-article-card";
+import { Avatar } from "@/components/avatar";
+import { Card, CardBody } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-export default function Home() {
+// Disciplines surfaced as quick filter chips on the feed.
+const FILTER_SLUGS = ["software", "hardware", "civil-systems", "mechanical", "electrical"];
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ discipline?: string; q?: string }>;
+}) {
+  const { discipline, q } = await searchParams;
+  const [articles, disciplines, topics, contributors] = await Promise.all([
+    api.listArticles({ discipline, q }),
+    api.listDisciplines(),
+    api.trendingTopics(),
+    api.topContributors(),
+  ]);
+
+  const filterChips = [
+    { slug: undefined, name: "All" },
+    ...FILTER_SLUGS.map((s) => disciplines.find((d) => d.slug === s)).filter(
+      (d): d is NonNullable<typeof d> => Boolean(d),
+    ),
+  ];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="mx-auto max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8">
+      {/* Discipline filter chips */}
+      <div className="flex flex-wrap items-center gap-2 pb-2">
+        {filterChips.map((d) => {
+          const active = d.slug === discipline;
+          return (
+            <Link
+              key={d.slug ?? "all"}
+              href={d.slug ? `/?discipline=${d.slug}` : "/"}
+              className={cn(
+                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary text-on-primary"
+                  : "border border-outline-variant text-on-surface-variant hover:bg-surface-container",
+              )}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              {d.name}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Feed */}
+        <div>
+          {q && (
+            <div className="mb-6 flex items-center justify-between gap-4 border-b border-outline-variant/40 pb-4">
+              <p className="text-sm text-on-surface-variant">
+                <span className="font-semibold text-on-surface">
+                  {articles.length}
+                </span>{" "}
+                {articles.length === 1 ? "result" : "results"} for{" "}
+                <span className="font-semibold text-on-surface">“{q}”</span>
+              </p>
+              <Link
+                href="/"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Clear
+              </Link>
+            </div>
+          )}
+
+          {articles.length === 0 ? (
+            <p className="py-16 text-center text-on-surface-variant">
+              {q
+                ? `No articles match “${q}”.`
+                : "No articles in this discipline yet."}
+            </p>
+          ) : (
+            articles.map((article) => (
+              <FeedArticleCard key={article.slug} article={article} />
+            ))
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+        {/* Sidebar */}
+        <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+          <Card className="bg-surface-container-low">
+            <CardBody>
+              <h2 className="text-base font-semibold text-on-surface">
+                Trending Topics
+              </h2>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {topics.map((t) => (
+                  <Badge key={t.tag} href={`/explore?tag=${t.tag}`} variant="outline">
+                    #{t.tag}
+                  </Badge>
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="bg-surface-container-low">
+            <CardBody>
+              <h2 className="text-base font-semibold text-on-surface">
+                Top Contributors
+              </h2>
+              <ul className="mt-4 space-y-4">
+                {contributors.map((author) => (
+                  <li key={author.handle}>
+                    <Link
+                      href={`/authors/${author.handle}`}
+                      className="group flex items-center gap-3"
+                    >
+                      <Avatar author={author} size="md" />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-on-surface group-hover:text-primary">
+                          {author.name}
+                        </span>
+                        <span className="block truncate text-xs text-on-surface-variant">
+                          {author.title}
+                        </span>
+                      </span>
+                      <span className="ml-auto text-xs font-medium text-on-surface-variant">
+                        {formatCompact(author.stats.followers)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

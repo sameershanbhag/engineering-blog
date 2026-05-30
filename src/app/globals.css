@@ -1,26 +1,301 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode (toggled on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  The Engineering Commons — Design System "Technical Precision"
+  Source: Stitch project 16658135531813357308
+  Material Design 3 tonal system. Deep Indigo primary, Emerald accent.
+  Light + dark themes. Tonal elevation (no heavy shadows), generous reading space.
+
+  Semantic tokens are declared in :root (light) and .dark (dark); the @theme
+  inline block below maps them to Tailwind color utilities so e.g. `bg-surface`
+  follows the active theme.
+*/
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* surfaces (tonal elevation) */
+  --background: #f8f9ff;
+  --surface: #f8f9ff;
+  --surface-dim: #cbdbf5;
+  --surface-bright: #f8f9ff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #eff4ff;
+  --surface-container: #e5eeff;
+  --surface-container-high: #dce9ff;
+  --surface-container-highest: #d3e4fe;
+
+  /* content on surfaces */
+  --on-surface: #0b1c30;
+  --on-surface-variant: #454652;
+  --inverse-surface: #213145;
+  --inverse-on-surface: #eaf1ff;
+  --outline: #767683;
+  --outline-variant: #c6c5d4;
+
+  /* primary (Deep Indigo) */
+  --primary: #283593;
+  --on-primary: #ffffff;
+  --primary-container: #dfe0ff;
+  --on-primary-container: #000c62;
+
+  /* secondary (Emerald accent) */
+  --secondary: #059669;
+  --on-secondary: #ffffff;
+  --secondary-container: #82f5c1;
+  --on-secondary-container: #00543a;
+
+  /* tertiary (Slate) */
+  --tertiary: #222a3e;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #dae2fd;
+  --on-tertiary-container: #131b2e;
+
+  /* error */
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  /* code block anchor (dark even in light mode) */
+  --code-surface: #1e293b;
+  --code-on-surface: #e2e8f0;
+
+  /* reading measure */
+  --container-prose: 45rem; /* ~720px article column */
+}
+
+.dark {
+  --background: #0a0f1c;
+  --surface: #0a0f1c;
+  --surface-dim: #070b14;
+  --surface-bright: #1b2336;
+  --surface-container-lowest: #060a12;
+  --surface-container-low: #0e1422;
+  --surface-container: #121a2b;
+  --surface-container-high: #1a2236;
+  --surface-container-highest: #232c43;
+
+  --on-surface: #e3e9f4;
+  --on-surface-variant: #aab3c6;
+  --inverse-surface: #e3e9f4;
+  --inverse-on-surface: #18202f;
+  --outline: #6b7488;
+  --outline-variant: #333c52;
+
+  --primary: #bcc2ff;
+  --on-primary: #111d57;
+  --primary-container: #303c9a;
+  --on-primary-container: #dfe0ff;
+
+  --secondary: #34d399;
+  --on-secondary: #00382a;
+  --secondary-container: #005139;
+  --on-secondary-container: #a7f3d0;
+
+  --tertiary: #c3cadf;
+  --on-tertiary: #18202f;
+  --tertiary-container: #384055;
+  --on-tertiary-container: #dae2fd;
+
+  --error: #ffb4ab;
+  --on-error: #690005;
+  --error-container: #93000a;
+  --on-error-container: #ffdad6;
+
+  --code-surface: #0d1424;
+  --code-on-surface: #e2e8f0;
 }
 
 @theme inline {
+  /* colors → follow the active theme via the variables above */
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+
+  --color-secondary: var(--secondary);
+  --color-on-secondary: var(--on-secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+
+  --color-tertiary: var(--tertiary);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+
+  --color-code-surface: var(--code-surface);
+  --color-code-on-surface: var(--code-on-surface);
+
+  /* typography */
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  /* radii (8–16px rounded language) */
+  --radius-sm: 0.25rem;
+  --radius-DEFAULT: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Base element styling */
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--on-surface);
+  }
+
+  /* Headings use the UI/display sans by default */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    color: var(--on-surface);
+    letter-spacing: -0.01em;
+  }
+
+  /* Subtle, M3-friendly focus ring */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--secondary-container);
+    color: var(--on-secondary-container);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*
+  Long-form article typography. Applied via the `.prose-article` wrapper on the
+  Article Detail page so reading content gets the serif treatment without
+  affecting UI chrome.
+*/
+@layer components {
+  .prose-article {
+    font-family: var(--font-serif);
+    font-size: 1.25rem; /* 20px */
+    line-height: 2rem; /* 32px */
+    color: var(--on-surface);
+    max-width: var(--container-prose);
+  }
+
+  .prose-article p,
+  .prose-article ul,
+  .prose-article ol,
+  .prose-article blockquote {
+    margin-block: 1.5rem;
+  }
+
+  .prose-article h2 {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 600;
+    margin-block: 2.5rem 1rem;
+  }
+
+  .prose-article h3 {
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+    font-weight: 600;
+    margin-block: 2rem 0.75rem;
+  }
+
+  .prose-article a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .prose-article blockquote {
+    border-left: 3px solid var(--secondary);
+    padding-left: 1.25rem;
+    color: var(--on-surface-variant);
+    font-style: italic;
+  }
+
+  .prose-article :not(pre) > code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: var(--surface-container-high);
+    color: var(--primary);
+    padding: 0.1em 0.35em;
+    border-radius: var(--radius-sm);
+  }
+
+  .prose-article pre {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    background: var(--code-surface);
+    color: var(--code-on-surface);
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    margin-block: 1.75rem;
+  }
+
+  .prose-article ul,
+  .prose-article ol {
+    padding-left: 1.5rem;
+  }
+  .prose-article ul {
+    list-style: disc;
+  }
+  .prose-article ol {
+    list-style: decimal;
+  }
+  .prose-article li {
+    margin-block: 0.4rem;
+  }
+  .prose-article li > p {
+    margin-block: 0;
+  }
+
+  .prose-article img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    margin-block: 1.75rem;
+  }
+
+  /* WYSIWYG editor placeholder (TipTap) */
+  .ec-editor p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--on-surface-variant);
+    opacity: 0.55;
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
 }
