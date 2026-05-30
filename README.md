@@ -38,5 +38,10 @@ See `.env.example`. `AUTH_SECRET` is required; `AUTH_GITHUB_*` / `AUTH_GOOGLE_*`
 are optional (those buttons hide when unset). Secrets live in `.env.local`
 (gitignored).
 
+## Deployment
+Pushes to `main` auto-deploy to Vercel via GitHub Actions
+([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)). One-time setup
+(token, project link, secrets, env vars) is in [`DEPLOY.md`](./DEPLOY.md).
+
 ## Project notes
 Conventions and architecture are documented in [`AGENTS.md`](./AGENTS.md).
