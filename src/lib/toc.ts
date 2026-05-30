@@ -1,20 +1,12 @@
 /**
- * Lightweight content processor for article HTML: injects stable `id`s onto
- * <h2> headings and returns a table of contents derived from them. Keeps the
- * mock self-contained without pulling a full markdown/HTML pipeline.
+ * Lightweight content processor for article HTML: injects stable, unique `id`s
+ * onto <h2> headings and returns a table of contents derived from them.
  */
+import { slugify } from "./format";
 
 export interface TocEntry {
   id: string;
   text: string;
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/<[^>]+>/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 export function processArticleHtml(html: string): {
@@ -22,11 +14,16 @@ export function processArticleHtml(html: string): {
   toc: TocEntry[];
 } {
   const toc: TocEntry[] = [];
+  const seen = new Map<string, number>();
   const processed = html.replace(
     /<h2>(.*?)<\/h2>/g,
     (_match, inner: string) => {
       const text = inner.replace(/<[^>]+>/g, "").trim();
-      const id = slugify(text);
+      const base = slugify(text) || "section";
+      // Disambiguate duplicate headings so each id is unique.
+      const n = seen.get(base) ?? 0;
+      seen.set(base, n + 1);
+      const id = n === 0 ? base : `${base}-${n + 1}`;
       toc.push({ id, text });
       return `<h2 id="${id}">${inner}</h2>`;
     },

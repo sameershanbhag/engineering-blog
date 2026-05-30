@@ -6,17 +6,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { LogOut, PenSquare, User as UserIcon } from "lucide-react";
+import { initials } from "@/lib/format";
 import { ButtonLink } from "./ui/button";
-
-function initials(nameOrEmail: string) {
-  const base = nameOrEmail.includes("@") ? nameOrEmail.split("@")[0] : nameOrEmail;
-  return base
-    .split(/[\s._-]+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 /** Header account control: avatar + dropdown when signed in, "Sign in" otherwise. */
 export function UserMenu() {

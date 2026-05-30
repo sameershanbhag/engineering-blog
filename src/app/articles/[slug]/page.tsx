@@ -17,7 +17,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = await api.getArticle(slug);
+  // Pass the viewer's token so an author's own draft resolves (not a 404).
+  const session = await auth();
+  const article = await api.getArticle(slug, session?.accessToken);
   if (!article) return { title: "Article not found" };
   return {
     title: `${article.title} — The Engineering Commons`,
@@ -32,11 +34,13 @@ export default async function ArticlePage({
 }) {
   const { slug } = await params;
   const session = await auth();
-  // Pass the viewer's token so the response includes their like/bookmark state.
-  const article = await api.getArticle(slug, session?.accessToken);
+  // Fetch article (with the viewer's token for like/bookmark state) and related
+  // in parallel — they're independent.
+  const [article, related] = await Promise.all([
+    api.getArticle(slug, session?.accessToken),
+    api.relatedArticles(slug),
+  ]);
   if (!article) notFound();
-
-  const related = await api.relatedArticles(slug);
   const { html, toc } = processArticleHtml(article.contentHtml);
 
   return (

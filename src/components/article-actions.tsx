@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Bookmark, Heart, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { formatCompact } from "@/lib/format";
 
 /** Sticky vertical rail of reader actions beside the article. Auth-gated. */
@@ -29,7 +29,8 @@ export function ArticleActions({
   const [liked, setLiked] = useState(initialLiked);
   const [saved, setSaved] = useState(initialBookmarked);
   const [likes, setLikes] = useState(initialLikes);
-  const [pending, setPending] = useState(false);
+  const [likePending, setLikePending] = useState(false);
+  const [savePending, setSavePending] = useState(false);
 
   const token = session?.accessToken;
 
@@ -39,36 +40,48 @@ export function ArticleActions({
     return false;
   }
 
+  // A 401 means the session looks valid but the backend token is stale/expired.
+  // Surface it by sending the user to sign in again rather than failing silently.
+  function handleError(err: unknown): boolean {
+    if (err instanceof ApiError && err.status === 401) {
+      router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
+      return true;
+    }
+    return false;
+  }
+
   async function toggleLike() {
-    if (pending || !requireAuth()) return;
+    if (likePending || !requireAuth()) return;
     const next = !liked;
     setLiked(next);
     setLikes((c) => c + (next ? 1 : -1));
-    setPending(true);
+    setLikePending(true);
     try {
       const res = await api.setLike(slug, next, token!);
       setLiked(res.liked);
-      setLikes(res.likes);
-    } catch {
+      if (typeof res.likes === "number") setLikes(res.likes);
+    } catch (err) {
       setLiked(!next); // revert
       setLikes((c) => c + (next ? -1 : 1));
+      handleError(err);
     } finally {
-      setPending(false);
+      setLikePending(false);
     }
   }
 
   async function toggleBookmark() {
-    if (pending || !requireAuth()) return;
+    if (savePending || !requireAuth()) return;
     const next = !saved;
     setSaved(next);
-    setPending(true);
+    setSavePending(true);
     try {
       const res = await api.setBookmark(slug, next, token!);
       setSaved(res.bookmarked);
-    } catch {
+    } catch (err) {
       setSaved(!next);
+      handleError(err);
     } finally {
-      setPending(false);
+      setSavePending(false);
     }
   }
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Bell, LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { initials } from "@/lib/format";
 import { ThemeToggle } from "./theme-toggle";
 import { SearchBox } from "./search-box";
 import { UserMenu } from "./user-menu";
@@ -139,9 +140,7 @@ export function SiteHeader() {
                       className="flex items-center gap-3 rounded-md px-3 py-2.5 text-base font-medium text-on-surface hover:bg-surface-container"
                     >
                       <span className="grid h-8 w-8 place-items-center rounded-full bg-tertiary text-xs font-semibold text-on-tertiary">
-                        {(session.user.name || session.user.email || "U")
-                          .slice(0, 1)
-                          .toUpperCase()}
+                        {initials(session.user.name || session.user.email || "U")}
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate">

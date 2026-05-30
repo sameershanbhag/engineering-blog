@@ -18,6 +18,7 @@ import {
   topContributors,
   trendingTopics,
 } from "./mock-data";
+import { slugify } from "./format";
 
 /*
   API client for The Engineering Commons.
@@ -30,6 +31,17 @@ import {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
+/** Error that carries the HTTP status so callers can react to e.g. 401. */
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 function authHeaders(token?: string): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -37,7 +49,7 @@ function authHeaders(token?: string): HeadersInit {
 async function get<T>(
   path: string,
   fallback: () => T,
-  opts?: { token?: string },
+  opts?: { token?: string; nullable?: boolean },
 ): Promise<T> {
   if (!BASE_URL) return fallback();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -45,7 +57,9 @@ async function get<T>(
     // Per-user responses must not be cached across users.
     ...(opts?.token ? { cache: "no-store" } : { next: { revalidate: 30 } }),
   });
-  if (!res.ok) throw new Error(`API ${path} failed: ${res.status}`);
+  // For nullable resources, a 404 means "not found", not an error.
+  if (res.status === 404 && opts?.nullable) return null as T;
+  if (!res.ok) throw new ApiError(res.status, `API ${path} failed: ${res.status}`);
   return (await res.json()) as T;
 }
 
@@ -55,24 +69,20 @@ async function send<TResult>(
   body: unknown,
   token: string | undefined,
   fallback: () => Promise<TResult> | TResult,
+  extraHeaders?: Record<string, string>,
 ): Promise<TResult> {
   if (!BASE_URL) return fallback();
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(token),
+      ...extraHeaders,
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`API ${path} failed: ${res.status}`);
+  if (!res.ok) throw new ApiError(res.status, `API ${path} failed: ${res.status}`);
   return (await res.json()) as TResult;
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
 }
 
 export const api = {
@@ -101,7 +111,7 @@ export const api = {
     return get(
       `/articles/${slug}`,
       () => articles.find((a) => a.slug === slug) ?? null,
-      { token },
+      { token, nullable: true },
     );
   },
 
@@ -124,7 +134,9 @@ export const api = {
   },
 
   getAuthor(handle: string): Promise<Author | null> {
-    return get(`/authors/${handle}`, () => authors[handle] ?? null);
+    return get(`/authors/${handle}`, () => authors[handle] ?? null, {
+      nullable: true,
+    });
   },
 
   authorArticles(handle: string, token?: string): Promise<Article[]> {
@@ -180,16 +192,27 @@ export const api = {
   },
 
   oauthLogin(input: OAuthInput): Promise<AuthResponse | null> {
-    return send<AuthResponse>("/auth/oauth", "POST", input, undefined, () => ({
-      user: {
-        id: `user_${slugify(input.email)}`,
-        name: input.name,
-        email: input.email,
-        image: input.image,
-        handle: slugify(input.name) || slugify(input.email),
-      },
-      accessToken: "mock-token",
-    }));
+    // The backend /auth/oauth endpoint requires the internal shared secret so
+    // it can't be called by arbitrary clients. This runs server-side only
+    // (NextAuth jwt callback), so the secret is never exposed to the browser.
+    const internal = process.env.INTERNAL_API_SECRET;
+    return send<AuthResponse>(
+      "/auth/oauth",
+      "POST",
+      input,
+      undefined,
+      () => ({
+        user: {
+          id: `user_${slugify(input.email)}`,
+          name: input.name,
+          email: input.email,
+          image: input.image,
+          handle: slugify(input.name) || slugify(input.email),
+        },
+        accessToken: "mock-token",
+      }),
+      internal ? { "X-Internal-Secret": internal } : undefined,
+    );
   },
 
   // ---- Write / interactions ----
@@ -208,13 +231,18 @@ export const api = {
     });
   },
 
-  setLike(slug: string, liked: boolean, token: string): Promise<{ likes: number; liked: boolean }> {
+  setLike(
+    slug: string,
+    liked: boolean,
+    token: string,
+  ): Promise<{ likes?: number; liked: boolean }> {
     return send(
       `/articles/${slug}/like`,
       liked ? "POST" : "DELETE",
       undefined,
       token,
-      () => ({ likes: 0, liked }),
+      // Mock has no real count; omit `likes` so the UI keeps its optimistic value.
+      () => ({ liked }),
     );
   },
 

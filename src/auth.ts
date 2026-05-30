@@ -63,18 +63,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (account.provider === "github" || account.provider === "google") &&
         user?.email
       ) {
-        const fed = await api.oauthLogin({
-          provider: account.provider,
-          providerAccountId: account.providerAccountId ?? account.provider,
-          email: user.email,
-          name: user.name ?? user.email,
-          image: user.image ?? undefined,
-        });
-        if (fed) {
-          token.id = fed.user.id;
-          token.handle = fed.user.handle;
-          token.accessToken = fed.accessToken;
+        let fed: Awaited<ReturnType<typeof api.oauthLogin>> = null;
+        try {
+          fed = await api.oauthLogin({
+            provider: account.provider,
+            providerAccountId: account.providerAccountId ?? account.provider,
+            email: user.email,
+            name: user.name ?? user.email,
+            image: user.image ?? undefined,
+          });
+        } catch {
+          fed = null;
         }
+        // Fail the sign-in rather than create a session with no backend token
+        // (which would 401 silently on every later write).
+        if (!fed) {
+          throw new Error("Sign-in failed: the backend is unavailable. Please try again.");
+        }
+        token.id = fed.user.id;
+        token.handle = fed.user.handle;
+        token.accessToken = fed.accessToken;
       }
       return token;
     },

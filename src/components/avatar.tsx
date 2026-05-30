@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { initials } from "@/lib/format";
 import type { Author } from "@/lib/types";
 
 const sizes = {
@@ -8,16 +9,6 @@ const sizes = {
   lg: { cls: "h-14 w-14 text-base", px: 56 },
   xl: { cls: "h-24 w-24 text-2xl", px: 96 },
 } as const;
-
-function initials(name: string) {
-  return name
-    .replace(/^(Dr|Mr|Ms|Mrs)\.?\s+/i, "")
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 /**
  * Author avatar. Renders the real photo when `avatarUrl` is set, otherwise a
