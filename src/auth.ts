@@ -73,7 +73,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             image: user.image ?? undefined,
           });
         } catch {
-          fed = null;
+          // fed stays null; handled below.
         }
         // Fail the sign-in rather than create a session with no backend token
         // (which would 401 silently on every later write).

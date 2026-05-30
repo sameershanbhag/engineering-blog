@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -11,15 +12,22 @@ import { ReadingProgress } from "@/components/reading-progress";
 import { ArticleActions } from "@/components/article-actions";
 import { ArticleMiniCard } from "@/components/article-mini-card";
 
+// Memoized per request so generateMetadata and the page share one auth() +
+// getArticle round-trip (the token path is no-store, so React fetch dedup alone
+// wouldn't help).
+const loadArticle = cache(async (slug: string) => {
+  const session = await auth();
+  const article = await api.getArticle(slug, session?.accessToken);
+  return { article };
+});
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  // Pass the viewer's token so an author's own draft resolves (not a 404).
-  const session = await auth();
-  const article = await api.getArticle(slug, session?.accessToken);
+  const { article } = await loadArticle(slug);
   if (!article) return { title: "Article not found" };
   return {
     title: `${article.title} — The Engineering Commons`,
@@ -33,11 +41,9 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const session = await auth();
-  // Fetch article (with the viewer's token for like/bookmark state) and related
-  // in parallel — they're independent.
-  const [article, related] = await Promise.all([
-    api.getArticle(slug, session?.accessToken),
+  // Article (memoized, shared with generateMetadata) + related, in parallel.
+  const [{ article }, related] = await Promise.all([
+    loadArticle(slug),
     api.relatedArticles(slug),
   ]);
   if (!article) notFound();

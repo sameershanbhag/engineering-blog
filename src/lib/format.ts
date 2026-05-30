@@ -27,14 +27,14 @@ export function slugify(text: string): string {
     .slice(0, 80);
 }
 
-/** Up-to-2-letter initials from a name or email (honorifics + separators handled). */
+/** Up-to-2-letter initials from a name or email. Names split on whitespace
+ * (so "Jean-Luc Picard" -> "JP"); email local parts split on separators. */
 export function initials(nameOrEmail: string): string {
-  const base = nameOrEmail.includes("@")
-    ? nameOrEmail.split("@")[0]
-    : nameOrEmail;
-  const result = base
-    .replace(/^(Dr|Mr|Ms|Mrs)\.?\s+/i, "")
-    .split(/[\s._-]+/)
+  const isEmail = nameOrEmail.includes("@");
+  const parts = isEmail
+    ? nameOrEmail.split("@")[0].split(/[._-]+/)
+    : nameOrEmail.replace(/^(Dr|Mr|Ms|Mrs)\.?\s+/i, "").split(/\s+/);
+  const result = parts
     .filter(Boolean)
     .map((w) => w[0])
     .slice(0, 2)

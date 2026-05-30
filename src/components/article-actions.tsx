@@ -42,12 +42,10 @@ export function ArticleActions({
 
   // A 401 means the session looks valid but the backend token is stale/expired.
   // Surface it by sending the user to sign in again rather than failing silently.
-  function handleError(err: unknown): boolean {
+  function handleError(err: unknown): void {
     if (err instanceof ApiError && err.status === 401) {
       router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
-      return true;
     }
-    return false;
   }
 
   async function toggleLike() {
