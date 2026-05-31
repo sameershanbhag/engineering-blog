@@ -7,6 +7,7 @@ import type {
   CreateArticleResult,
   Discipline,
   LoginInput,
+  NotificationsResponse,
   OAuthInput,
   RegisterInput,
   Topic,
@@ -258,6 +259,18 @@ export const api = {
 
   myDrafts(token: string): Promise<Article[]> {
     return get(`/me/drafts`, () => [] as Article[], { token });
+  },
+
+  getNotifications(token: string): Promise<NotificationsResponse> {
+    return get(`/me/notifications`, () => ({ items: [], unreadCount: 0 }), {
+      token,
+    });
+  },
+
+  markNotificationsRead(token: string): Promise<{ ok: boolean }> {
+    return send(`/me/notifications/read`, "POST", undefined, token, () => ({
+      ok: true,
+    }));
   },
 
   myBookmarks(token: string): Promise<Article[]> {

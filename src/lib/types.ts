@@ -50,6 +50,24 @@ export interface Topic {
   count: number;
 }
 
+export interface Notification {
+  id: string;
+  type: "like" | "bookmark";
+  actorName: string;
+  actorHandle: string;
+  actorAvatarUrl?: string;
+  actorAvatarColor: string;
+  articleSlug: string;
+  articleTitle: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  items: Notification[];
+  unreadCount: number;
+}
+
 /** Payload sent to the backend when publishing or saving a draft. */
 export interface CreateArticleInput {
   title: string;

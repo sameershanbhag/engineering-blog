@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Bell, LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 import { ThemeToggle } from "./theme-toggle";
 import { SearchBox } from "./search-box";
 import { UserMenu } from "./user-menu";
+import { NotificationBell } from "./notification-bell";
 
 const NAV = [
   { href: "/", label: "Feed" },
@@ -79,19 +80,14 @@ export function SiteHeader() {
 
           <ThemeToggle className="ml-1" />
 
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="grid h-9 w-9 place-items-center rounded-full text-on-surface-variant hover:bg-surface-container"
-          >
-            <Bell className="h-5 w-5" />
-          </button>
+          <NotificationBell />
 
           <UserMenu />
         </nav>
 
         {/* Mobile controls */}
         <div className="ml-auto flex items-center gap-1 md:hidden">
+          <NotificationBell />
           <ThemeToggle />
           <button
             type="button"
