@@ -50,7 +50,7 @@ function authHeaders(token?: string): HeadersInit {
 async function get<T>(
   path: string,
   fallback: () => T,
-  opts?: { token?: string; nullable?: boolean },
+  opts?: { token?: string; nullable?: boolean; viewerOptional?: boolean },
 ): Promise<T> {
   if (!BASE_URL) return fallback();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -58,6 +58,11 @@ async function get<T>(
     // Per-user responses must not be cached across users.
     ...(opts?.token ? { cache: "no-store" } : { next: { revalidate: 30 } }),
   });
+  // Stale/invalid token on a resource that's also publicly viewable: retry
+  // anonymously so the page still renders (just without viewer-specific state).
+  if (res.status === 401 && opts?.token && opts?.viewerOptional) {
+    return get(path, fallback, { ...opts, token: undefined });
+  }
   // For nullable resources, a 404 means "not found", not an error.
   if (res.status === 404 && opts?.nullable) return null as T;
   if (!res.ok) throw new ApiError(res.status, `API ${path} failed: ${res.status}`);
@@ -112,7 +117,7 @@ export const api = {
     return get(
       `/articles/${slug}`,
       () => articles.find((a) => a.slug === slug) ?? null,
-      { token, nullable: true },
+      { token, nullable: true, viewerOptional: true },
     );
   },
 
@@ -144,7 +149,7 @@ export const api = {
     return get(
       `/authors/${handle}/articles`,
       () => articles.filter((a) => a.author.handle === handle),
-      { token },
+      { token, viewerOptional: true },
     );
   },
 

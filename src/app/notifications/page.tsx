@@ -2,9 +2,11 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { Bell } from "lucide-react";
 import { auth } from "@/auth";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import type { NotificationsResponse } from "@/lib/types";
 import { NotificationItem } from "@/components/notification-item";
 import { MarkAllReadButton } from "@/components/mark-all-read-button";
+import { SessionExpiredNotice } from "@/components/session-expired-notice";
 
 export const metadata: Metadata = {
   title: "Notifications — The Engineering Commons",
@@ -16,7 +18,17 @@ export default async function NotificationsPage() {
     redirect(`/login?callbackUrl=${encodeURIComponent("/notifications")}`);
   }
 
-  const { items, unreadCount } = await api.getNotifications(session.accessToken);
+  let data: NotificationsResponse | null = null;
+  try {
+    data = await api.getNotifications(session.accessToken);
+  } catch (err) {
+    // Stale/expired backend token: show a re-auth prompt instead of crashing
+    // (redirecting to /login would loop, since the NextAuth session is valid).
+    if (!(err instanceof ApiError && err.status === 401)) throw err;
+  }
+
+  const items = data?.items ?? [];
+  const unreadCount = data?.unreadCount ?? 0;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
@@ -26,7 +38,9 @@ export default async function NotificationsPage() {
       </div>
 
       <div className="mt-6 divide-y divide-outline-variant/30 overflow-hidden rounded-lg border border-outline-variant/40 bg-surface-container-lowest">
-        {items.length === 0 ? (
+        {data === null ? (
+          <SessionExpiredNotice />
+        ) : items.length === 0 ? (
           <div className="px-4 py-16 text-center">
             <Bell className="mx-auto h-8 w-8 text-on-surface-variant/50" />
             <p className="mt-3 text-on-surface-variant">
