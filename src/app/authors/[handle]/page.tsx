@@ -7,6 +7,7 @@ import { formatCompact } from "@/lib/format";
 import { Avatar } from "@/components/avatar";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ProfileTabs } from "@/components/profile-tabs";
+import { EditProfile } from "@/components/edit-profile";
 
 export async function generateMetadata({
   params,
@@ -62,9 +63,12 @@ export default async function ProfilePage({
               </div>
               <div className="flex gap-2">
                 {isOwner ? (
-                  <ButtonLink href="/write" variant="primary">
-                    Write article
-                  </ButtonLink>
+                  <>
+                    <EditProfile author={author} />
+                    <ButtonLink href="/write" variant="primary">
+                      Write article
+                    </ButtonLink>
+                  </>
                 ) : (
                   <>
                     <Button variant="primary">Follow</Button>

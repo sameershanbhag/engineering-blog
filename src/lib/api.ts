@@ -9,6 +9,7 @@ import type {
   LoginInput,
   NotificationsResponse,
   OAuthInput,
+  ProfileUpdateInput,
   RegisterInput,
   Topic,
 } from "./types";
@@ -71,7 +72,7 @@ async function get<T>(
 
 async function send<TResult>(
   path: string,
-  method: "POST" | "DELETE",
+  method: "POST" | "PATCH" | "DELETE",
   body: unknown,
   token: string | undefined,
   fallback: () => Promise<TResult> | TResult,
@@ -142,6 +143,13 @@ export const api = {
   getAuthor(handle: string): Promise<Author | null> {
     return get(`/authors/${handle}`, () => authors[handle] ?? null, {
       nullable: true,
+    });
+  },
+
+  /** Update the signed-in user's own author profile (headline, bio, GitHub). */
+  updateProfile(input: ProfileUpdateInput, token: string): Promise<Author> {
+    return send<Author>("/me/author", "PATCH", input, token, () => {
+      throw new Error("Saving your profile requires the backend service.");
     });
   },
 
